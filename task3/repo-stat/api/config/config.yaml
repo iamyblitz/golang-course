@@ -3,10 +3,11 @@ app:
 
 http:
   address: "localhost:8080"
-  timeout: "5s"
+  timeout: "30s"
 
 logger:
   log_level: "DEBUG"
 
 services:
   subscriber: "localhost:8081"
+  processor: "localhost:8082"

@@ -9,16 +9,50 @@ type Pinger interface {
 	Ping(ctx context.Context) domain.PingStatus
 }
 
-type Ping struct {
-	pinger Pinger
+type ServiceStatus struct {
+	Name   string
+	Status domain.PingStatus
 }
 
-func NewPing(pinger Pinger) *Ping {
+type PingResult struct {
+	Status   string
+	Services []ServiceStatus
+}
+
+type Ping struct {
+	processor  Pinger
+	subscriber Pinger
+}
+
+func NewPing(processor Pinger, subscriber Pinger) *Ping {
 	return &Ping{
-		pinger: pinger,
+		processor:  processor,
+		subscriber: subscriber,
 	}
 }
 
-func (u *Ping) Execute(ctx context.Context) domain.PingStatus {
-	return u.pinger.Ping(ctx)
+func (u *Ping) Execute(ctx context.Context) PingResult {
+	services := []ServiceStatus{
+		{
+			Name:   "processor",
+			Status: u.processor.Ping(ctx),
+		},
+		{
+			Name:   "subscriber",
+			Status: u.subscriber.Ping(ctx),
+		},
+	}
+
+	status := "ok"
+	for _, service := range services {
+		if service.Status == domain.PingStatusDown {
+			status = "degraded"
+			break
+		}
+	}
+
+	return PingResult{
+		Status:   status,
+		Services: services,
+	}
 }
