@@ -1,0 +1,13 @@
+app:
+  app_name: "repo-stat-subscribe"
+
+grpc:
+  address: "localhost:8084"
+  timeout: "5s"
+
+logger:
+  log_level: "DEBUG"
+
+database:
+  dsn: "postgres://repo_stat:repo_stat@localhost:5432/repo_stat?sslmode=disable"
+  migrations_path: "file://subscribe/migrations"

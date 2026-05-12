@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package collector.v1;
+
+option go_package = "repo-stat/proto/collector;collector";
+
+service Collector {
+  rpc GetRepositoryInfo(GetRepositoryInfoRequest) returns (GetRepositoryInfoResponse);
+  rpc GetSubscriptionsInfo(GetSubscriptionsInfoRequest) returns (GetSubscriptionsInfoResponse);
+}
+
+message GetRepositoryInfoRequest {
+  string owner = 1;
+  string repo = 2;
+}
+
+message GetRepositoryInfoResponse {
+  string full_name = 1;
+  string description = 2;
+  int64 stars = 3;
+  int64 forks = 4;
+  string created_at = 5;
+}
+
+message GetSubscriptionsInfoRequest {
+}
+
+message GetSubscriptionsInfoResponse {
+  repeated RepositoryInfo repositories = 1;
+}
+
+message RepositoryInfo {
+  string full_name = 1;
+  string description = 2;
+  int64 stars = 3;
+  int64 forks = 4;
+  string created_at = 5;
+}

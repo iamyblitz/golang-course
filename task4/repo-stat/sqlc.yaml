@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "subscribe/migrations"
+    queries: "subscribe/internal/storage/query"
+    gen:
+      go:
+        package: "db"
+        out: "subscribe/internal/storage/db"
+        sql_package: "pgx/v5"

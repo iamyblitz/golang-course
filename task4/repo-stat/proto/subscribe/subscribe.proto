@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package subscribe.v1;
+
+option go_package = "repo-stat/proto/subscribe;subscribe";
+
+service Subscribe {
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (SubscriptionResponse);
+  rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse);
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse);
+}
+
+message Subscription {
+  string owner = 1;
+  string repo = 2;
+}
+
+message CreateSubscriptionRequest {
+  string owner = 1;
+  string repo = 2;
+}
+
+message DeleteSubscriptionRequest {
+  string owner = 1;
+  string repo = 2;
+}
+
+message ListSubscriptionsRequest {
+}
+
+message SubscriptionResponse {
+  Subscription subscription = 1;
+}
+
+message DeleteSubscriptionResponse {
+}
+
+message ListSubscriptionsResponse {
+  repeated Subscription subscriptions = 1;
+}
