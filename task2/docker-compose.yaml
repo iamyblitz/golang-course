@@ -1,0 +1,18 @@
+services:
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    ports:
+      - "2001:2001"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    environment:
+      COLLECTOR_ADDR: collector:2001
+    ports:
+      - "8080:8080"
+    depends_on:
+      - collector

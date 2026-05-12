@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package repo;
+
+option go_package = "github.com/iamyblitz/golang-course/task2/proto;proto";
+
+message RepoRequest {
+    string owner = 1;
+    string repo = 2;
+}
+
+message RepoResponse {
+  string name        = 1;
+  string description = 2;
+  int32  stars       = 3;
+  int32  forks       = 4;
+  string created_at  = 5;
+}
+
+service RepoService {
+  rpc GetRepo(RepoRequest) returns (RepoResponse);
+}
