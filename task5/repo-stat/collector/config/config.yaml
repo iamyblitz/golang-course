@@ -1,0 +1,15 @@
+app:
+  app_name: "repo-stat-collector"
+
+logger:
+  log_level: "DEBUG"
+
+services:
+  subscribe: "localhost:8084"
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  task_topic: "repository.collect.tasks"
+  result_topic: "repository.collect.results"
+  consumer_group: "collector-tasks"

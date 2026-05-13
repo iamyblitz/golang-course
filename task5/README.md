@@ -152,3 +152,130 @@ Collector остается сервисом, который инкапсулир
 - [pgxpool](https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool)
 - [Clean Architecture в Go](https://pavel-v-p.medium.com/clean-architecture-in-go-2708304217f2)
 - Kafka in action (книга)
+
+---
+
+## Реализация
+
+В этом решении `Processor` и `Collector` больше не связаны напрямую. Между ними остался только Kafka:
+
+- `API` вызывает `Processor` по gRPC;
+- `Processor` сначала проверяет свою PostgreSQL базу;
+- если репозитория нет в кэше, `Processor` сохраняет строку со статусом `pending` и отправляет задачу в Kafka;
+- `Collector` читает задачу из Kafka, идет в GitHub REST API и публикует результат обратно в Kafka;
+- `Processor` читает результат, обновляет свою PostgreSQL базу и отдает данные клиенту;
+- повторный запрос по тому же репозиторию уже возвращается из базы `Processor`;
+- `Collector` раз в 15 секунд получает подписки из `Subscribe` по gRPC и отправляет задачи обновления в Kafka.
+
+`Subscribe` по-прежнему хранит подписки в своей PostgreSQL базе. Для `Processor` добавлена отдельная PostgreSQL база, отдельные миграции и `sqlc`-код.
+
+## Kafka
+
+Используются два топика.
+
+`repository.collect.tasks`
+
+- producers: `Processor`, `Collector` background refresher;
+- consumer: `Collector`;
+- назначение: задача на сбор или обновление информации о репозитории;
+- формат:
+
+```json
+{
+  "owner": "docker",
+  "repo": "compose"
+}
+```
+
+`repository.collect.results`
+
+- producer: `Collector`;
+- consumer: `Processor`;
+- назначение: результат сбора из GitHub API;
+- успешный формат:
+
+```json
+{
+  "owner": "docker",
+  "repo": "compose",
+  "full_name": "docker/compose",
+  "description": "Define and run multi-container applications with Docker",
+  "stars": 37379,
+  "forks": 5795,
+  "created_at": "2013-12-09T11:40:58Z"
+}
+```
+
+- формат ошибки:
+
+```json
+{
+  "owner": "unknown",
+  "repo": "unknown",
+  "error": "not_found"
+}
+```
+
+В поле `error` используются значения `not_found` и `github_unavailable`.
+
+## Локальный запуск
+
+Из директории `task5`:
+
+```bash
+make up
+```
+
+Основные адреса:
+
+- API Gateway: `http://localhost:28080`;
+- Swagger UI: `http://localhost:28080/swagger`;
+- Kafka: `localhost:29092`;
+- PostgreSQL для `Subscribe`: `localhost:25432`;
+- PostgreSQL для `Processor`: `localhost:25433`.
+
+Проверка health endpoint:
+
+```bash
+curl http://localhost:28080/api/ping
+```
+
+Первый запрос инициирует сбор через Kafka:
+
+```bash
+curl "http://localhost:28080/api/repositories/info?url=https://github.com/docker/compose"
+```
+
+Повторный запрос возвращает данные из PostgreSQL базы `Processor`:
+
+```bash
+curl "http://localhost:28080/api/repositories/info?url=https://github.com/docker/compose"
+```
+
+Создание подписки:
+
+```bash
+curl -X POST http://localhost:28080/subscriptions \
+  -H "Content-Type: application/json" \
+  -d '{"owner":"docker","repo":"compose"}'
+```
+
+Получение данных по подпискам:
+
+```bash
+curl http://localhost:28080/subscriptions/info
+```
+
+Посмотреть сохраненные данные в базе `Processor`:
+
+```bash
+docker exec processor-postgres psql -U repo_stat -d repo_stat_processor \
+  -c "select owner, repo, status, full_name from repositories order by owner, repo;"
+```
+
+Посмотреть, что `Collector` действительно получает задачи и публикует результаты:
+
+```bash
+docker compose logs collector
+docker compose logs processor
+```

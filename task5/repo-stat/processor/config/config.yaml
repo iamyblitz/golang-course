@@ -1,0 +1,23 @@
+app:
+  app_name: "repo-stat-processor"
+
+grpc:
+  address: "localhost:8082"
+  timeout: "5s"
+
+logger:
+  log_level: "DEBUG"
+
+services:
+  subscribe: "localhost:8084"
+
+database:
+  dsn: "postgres://repo_stat:repo_stat@localhost:5433/repo_stat_processor?sslmode=disable"
+  migrations_path: "file://processor/migrations"
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  task_topic: "repository.collect.tasks"
+  result_topic: "repository.collect.results"
+  consumer_group: "processor-results"

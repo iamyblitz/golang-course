@@ -1,0 +1,14 @@
+app:
+  app_name: "repo-stat-api"
+
+http:
+  address: "localhost:8080"
+  timeout: "30s"
+
+logger:
+  log_level: "DEBUG"
+
+services:
+  subscriber: "localhost:8081"
+  processor: "localhost:8082"
+  subscribe: "localhost:8084"
